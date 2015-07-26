@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title></title>
+		<meta charset="utf-8">
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="">
+		<!--[if lt IE 9]>
+			<script src="//cdn.jsdelivr.net/html5shiv/3.7.2/html5shiv.min.js"></script>
+			<script src="//cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+		<link rel="shortcut icon" href="">
+		<style>
+			#dropbox {
+  /*単なるスタイリング*/
+  width:500px; height:100px; margin:20px; background-color:#CCFF66; border:1px solid #00cc00;
+  /*以下はwebkit系ブラウザでドラッグ＆ドロップを動かすための指定（ブラウザのサポートが進めば、必要なくなると思われます）*/
+  -khtml-user-drag: element;
+}
+#dropbox-inner-1 {
+  /*単なるスタイリング*/
+  width:500px; height:100px; margin:20px; background-color:#AA0066; border:1px solid #00cc00;
+  /*以下はwebkit系ブラウザでドラッグ＆ドロップを動かすための指定（ブラウザのサポートが進めば、必要なくなると思われます）*/
+  -khtml-user-drag: element;
+}
+			</style>
+		<script>
+/***** ドラッグ開始時の処理 *****/
+function f_dragstart(event){
+  //ドラッグするデータのid名をDataTransferオブジェクトにセット
+  //if (event.dataTransfer == null){
+	  //event.dataTransfer = event.originalEvent.dataTransfer;
+  //}
+  event.dataTransfer.effectAllowed = "all";
+  event.dropEffect = "move";
+  event.dataTransfer.setData("text", JSON.stringify({ "id": event.target.id, "value": "testvalue1"}));
+}
+
+/***** ドラッグ要素がドロップ要素に重なっている間の処理 *****/
+function f_dragover(event){
+  //dragoverイベントをキャンセルして、ドロップ先の要素がドロップを受け付けるようにする
+  event.preventDefault();
+}
+
+/***** ドロップ時の処理 *****/
+function f_drop(event){
+	//alert("drop!");
+  //ドラッグされたデータのid名をDataTransferオブジェクトから取得
+  //var id_name = event.dataTransfer.getData("text");
+  var dragSrc = JSON.parse(event.dataTransfer.getData("text"));
+  var id_name = dragSrc.id;
+  //id名からドラッグされた要素を取得
+  //var drag_elm =document.getElementById(id_name);
+  var newelement = document.createElement("div");
+  newelement.textContent = id_name;
+  //ドロップ先にドラッグされた要素を追加
+  event.target.appendChild(newelement);
+  //エラー回避のため、ドロップ処理の最後にdropイベントをキャンセルしておく
+  event.preventDefault();
+}
+</script>
+	</head>
+	<body>
+		<div id="item1" draggable="true" ondragstart="f_dragstart(event)">child drag part</div>
+		<div id="dropbox">root div block
+			<div id="dropbox-inner-1">drop point</div>
+		</div>
+		<!-- Place your content here -->
+		<!-- SCRIPTS -->
+		<!-- Example: <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> -->
+	</body>
+
+</html>

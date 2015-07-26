@@ -82,7 +82,7 @@ var pageDesignerGlobal = {};
 				(function(index) {
 					var item = toolItems[index];
 					// 保存リクエストを送信
-					pageDesigner.httpClient.postUrl("/~takashi/ddsample/mdl/newitem.json", item)
+					pageDesigner.httpClient.postUrl("/~takashi/pagedesigner/prototype/mdl/newitem.json", item)
 					.then(function(obj){
 						// 保存完了したので、ローカルデータを消す
 						pageDesigner.localDb.removeDeployedToolItem(item.toolItemId);

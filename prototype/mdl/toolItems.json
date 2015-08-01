@@ -1,0 +1,43 @@
+{
+	"formId": "HSMO0001F01",
+	"items": [
+		{
+			"itemId": "userId",
+			"ctrlType": "TXT",
+			"ctrlTagText": "<div><input type='text' value='useridvalue'></div>",
+			"ctrlData": {
+				"tagName": "input",
+				"attrs": {
+					"type": "text",
+					"maxLength": "12"
+				}
+			},
+			"label": "ユーザーID"
+		},
+		{
+			"itemId": "userName",
+			"ctrlType": "TXT",
+			"ctrlTagText": "<input type='text' value='useridvalue'>",
+			"ctrlData": {
+				"tagName": "input",
+				"attrs": {
+					"type": "text",
+					"maxLength": "12"
+				}
+			},
+			"label": "ユーザー名"
+		},
+		{
+			"itemId": "createdAt",
+			"ctrlType": "CAL",
+			"ctrlTagText": "<input type='date'>",
+			"ctrlData": {
+				"tagName": "input",
+				"attrs": {
+					"type": "date"
+				}
+			},
+			"label": "登録日時"
+		}
+	]
+}

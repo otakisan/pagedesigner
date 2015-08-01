@@ -1,4 +1,4 @@
-//"use strict";
+"use strict";
 
 var pageDesignerGlobal = {};
 (function (pageDesigner) {
@@ -21,33 +21,26 @@ var pageDesignerGlobal = {};
 	pageDesigner.onTargetPageLoad = function iframe_loaded(event) {
 
 		event.target.contentDocument.body.ondrop = function (dropevent) {
-			//alert("drop!");
-			//ドラッグされたデータのid名をDataTransferオブジェクトから取得
-			//var id_name = event.dataTransfer.getData("text");
-			//var _target = dropevent.target;
-			var dragSrc = JSON.parse(dropevent.dataTransfer.getData("text"));
-			// dropevent.dataTransfer.items[0].getAsString(function (data) {
-			// 	console.log(data);
-			
-			// 	var id_name = dragSrc.id;
-			// 	var newelement = document.createElement("div");
-			// 	newelement.textContent = id_name;
-			// 	//ドロップ先にドラッグされた要素を追加
-			// 	_target.appendChild(newelement);
+			// ドラッグされたデータのid名をDataTransferオブジェクトから取得
+			var dragSrc = JSON.parse(dropevent.dataTransfer.getData("drag-data-toolitem"));
+			var id_name = dragSrc.itemId;
 
-			// }, false);
-			// var dragSrc = JSON.parse(dropevent.dataTransfer.getData("text"));
-			var id_name = dragSrc.id;
-			//id名からドラッグされた要素を取得
-			//var drag_elm =document.getElementById(id_name);
-			var newelement = document.createElement("div");
-			newelement.textContent = id_name;
-			//ドロップ先にドラッグされた要素を追加
+			// 取得した情報からコントロールタグを構築			
+			// タグの属性を受け取って表示する方式
+			// 要素をオブジェクトとして扱い、任意の位置に差し込むなどの操作をするならこちらか。
+			var newelement = document.createElement(dragSrc.ctrlData.tagName);
+			for (var key in dragSrc.ctrlData.attrs) {
+				newelement[key] = dragSrc.ctrlData.attrs[key];
+			}			
 			dropevent.target.appendChild(newelement);
+			
+			// タグテキストをそのまま設定
+			//dropevent.target.innerHTML = dropevent.target.innerHTML + dragSrc.ctrlTagText;
+			
 			//エラー回避のため、ドロップ処理の最後にdropイベントをキャンセルしておく
 			dropevent.preventDefault();
-		
-			// Web Storageに保存
+
+			// ローカルに保存
 			//localStorage.setItem(id_name, JSON.stringify({ "id": id_name, "offsetx": 0, "offsety": 0 }));
 			pageDesigner.localDb.addDeployedToolItems({toolItemId:id_name, offsetx:dropevent.offsetX, offsety:dropevent.offsetY});
 			
@@ -67,14 +60,11 @@ var pageDesignerGlobal = {};
 			dragoverevent.preventDefault();
 		};
 	};
-
-	pageDesigner.onToolItemDragstart = function toolItem_dragstart(event) {
-		//ドラッグするデータのid名をDataTransferオブジェクトにセット
-		event.dataTransfer.setData("text", JSON.stringify({ "id": event.target.textContent, "value": "testvalue1" }));
-	};
 	
 	pageDesigner.onSaveToolItemDeployed = function(event) {
 		// ローカルのデータを取得
+		// TODO: ES6使えるようになったら、arrow function と letで置き換える、ループ内のfunctionもなくす
+		// もしくは、Babel
 		pageDesigner.localDb.getAllDeployedToolItems(function(toolItems){
 			console.log("done to get toolItems.", toolItems);
 			for( var itemIndex in toolItems) {
@@ -82,7 +72,7 @@ var pageDesignerGlobal = {};
 				(function(index) {
 					var item = toolItems[index];
 					// 保存リクエストを送信
-					pageDesigner.httpClient.postUrl("/~takashi/pagedesigner/prototype/mdl/newitem.json", item)
+					pageDesigner.httpClient.postUrl("/~takashi/pagedesigner/prototype/mdl/newitem.json", JSON.stringify(item))
 					.then(function(obj){
 						// 保存完了したので、ローカルデータを消す
 						pageDesigner.localDb.removeDeployedToolItem(item.toolItemId);
@@ -127,51 +117,22 @@ var pageDesignerGlobal = {};
 	};
 	
 	pageDesigner.localDb = {
+		dbName: "pageDesignerLocalDb",
+		objectStoreName: "deployedToolItems",
 		pageDesignerLocalDb: null,
-		// deployedToolItemsStore: null,
-		// idbReq: null,
-		// addDeployedToolItems: function(item) {
-		// 	// if (!pageDesigner.localDb.pageDesignerLocalDb) {
-		// 	// 	pageDesigner.localDb.init();
-		// 	// }
-			
-		// 	var db = pageDesigner.localDb.pageDesignerLocalDb;
-		//     var transaction = db.transaction(["deployedToolItems"], "readwrite");
-		// 	try {
-		// 	var store = transaction.objectStore("deployedToolItems");
-		// 	store.add(item);
-				
-		// 	} catch (error) {
-		// 		console.log(error);
-		// 	}
-			
-		// },
 		addDeployedToolItems: function(item) {
-			// var idbReq = indexedDB.open("pageDesignerLocalDb", 1);
-			// idbReq.onsuccess = function (event) {
-			// 	//pageDesigner.localDb.pageDesignerLocalDb = idbReq.result;
-			// 	try {
-			// 		var transaction = idbReq.result.transaction(["deployedToolItems"], "readwrite");
-			// 		var store = transaction.objectStore("deployedToolItems");
-			// 		store.add(item);
-			// 		console.log("success : add : ", item);
-			// 	} catch (error) {
-			// 		console.log(error);
-			// 	}
-			// 	console.log("success", event);
-			// };
+			// Chromeだと動くけど、Firefoxは、毎回DBをopenしないとうまくいかないため、毎回取る
 			this.accessObjectStore(function(store){
 				store.add(item);
 				console.log("success : add : ", item);
 			});
 		},
 		accessObjectStore: function(callback) {
-			var idbReq = indexedDB.open("pageDesignerLocalDb", 1);
+			var idbReq = indexedDB.open(pageDesigner.localDb.dbName, 1);
 			idbReq.onsuccess = function (event) {
-				//pageDesigner.localDb.pageDesignerLocalDb = idbReq.result;
 				try {
-					var transaction = idbReq.result.transaction(["deployedToolItems"], "readwrite");
-					var store = transaction.objectStore("deployedToolItems");
+					var transaction = idbReq.result.transaction([pageDesigner.localDb.objectStoreName], "readwrite");
+					var store = transaction.objectStore(pageDesigner.localDb.objectStoreName);
 					callback(store);
 					
 				} catch (error) {
@@ -184,27 +145,6 @@ var pageDesignerGlobal = {};
 			};
 			
 		},
-		// getAllDeployedToolItems: function() {
-		// 	//"twitter", "pocket"2つのオブジェクトストアを読み書き権限付きで使用することを宣言
-		// 	var db = pageDesigner.localDb.pageDesignerLocalDb;
-		//     var transaction = db.transaction(["deployedToolItems"], "readwrite");
-		
-		//     //各オブジェクトストアの取り出し
-		//     var twitterStore = transaction.objectStore("deployedToolItems");
-		
-		//     //twitterオブジェクトストアから全データの取り出し
-		// 	var toolItems = [];
-		//     twitterStore.openCursor().onsuccess = function (event) {
-		//         var cursor = event.target.result;
-		//         if (cursor) {
-		// 			toolItems.push({toolItemId:cursor.key, offsetx: cursor.value.offsetx, offsety: cursor.value.offsety})
-		//             console.log("toolItemId:" + cursor.key + " value: " + cursor.value);
-		//             cursor.continue();
-		//         }
-		//     };
-			
-		// 	return toolItems;
-		// },
 		getAllDeployedToolItems: function(callback) {
 			var toolItems = [];
 			this.accessObjectStore(function(store){
@@ -219,15 +159,7 @@ var pageDesignerGlobal = {};
 					}
 			    };
 			});
-			
-			//return toolItems;
 		},
-		// removeDeployedToolItem: function(key) {
-		// 	var db = pageDesigner.localDb.pageDesignerLocalDb;
-		//     var transaction = db.transaction(["deployedToolItems"], "readwrite");
-		// 	var store = transaction.objectStore("deployedToolItems");
-		// 	store.delete(key);
-		// },
 		removeDeployedToolItem: function(key) {
 			this.accessObjectStore(function(store){
 				store.delete(key);
@@ -236,41 +168,32 @@ var pageDesignerGlobal = {};
 		},
 		init: function() {
 			
-			//2.indexedDBを開く
+			// indexedDBを開く
 			if(!pageDesigner.localDb.pageDesignerLocalDb) {
 				
 				//indexedDB.deleteDatabase( "pageDesignerLocalDb" );
-				var idbReq = indexedDB.open("pageDesignerLocalDb", 1);
+				var idbReq = indexedDB.open(pageDesigner.localDb.dbName, 1);
 				
-				//3.DBの新規作成時、またはバージョン変更時に実行するコード
+				// DBの新規作成時、またはバージョン変更時に実行するコード
 				idbReq.onupgradeneeded = function (event) {
 				    var db = event.target.result;
-				    db.createObjectStore("deployedToolItems", { keyPath: "toolItemId" });
-				
-				    //データの追加
-				    //twitterStore.add({ toolItemId: "1", text: "test" });
+				    db.createObjectStore(pageDesigner.localDb.objectStoreName, { keyPath: "toolItemId" });
+					console.log("indexedDb createObjectStore : success", event);
 				};
 				
 				idbReq.onerror = function (event) {
-				    console.log("error");
+				    console.log("indexedDb open : error");
 				};
 				
 				idbReq.onsuccess = function (event) {
 					pageDesigner.localDb.pageDesignerLocalDb = idbReq.result;
-					try {
-						var transaction = pageDesigner.localDb.pageDesignerLocalDb.transaction(["deployedToolItems"], "readwrite");
-						var store = transaction.objectStore("deployedToolItems");
-						console.log(store);
-					} catch (error) {
-						console.log(error);
-					}
-					console.log("success", event);
+					console.log("indexedDb open : success", event);
 				};
 				
 			}
 		}	
 	};
-	
+		
 	window.addEventListener("message", function(messageEvent){
 		// postMessage時に入れた値がそのまま入る
 		console.log(messageEvent.data.eventName, messageEvent.data.key);
@@ -282,8 +205,8 @@ var pageDesignerGlobal = {};
 			document.getElementById("saveToolItemDeployedButton").classList.add("mdl-button--colored");
 		}
 	});
-	
-				pageDesigner.localDb.init();
-
+		
+	// DB初期化
+	pageDesigner.localDb.init();
 
 })(pageDesignerGlobal);
